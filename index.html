@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiDomain - CloudFlare Edge Routing Dashboard</title>
+    <meta name="description" content="OptiDomain：CloudFlare IP 智能优选工具，三网自动路由调度，实时延迟监控。">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <!-- Domain config injected here; script.js reads this to avoid hardcoding -->
+    <meta name="routing-domain" content="djx-ybelove.pp.ua">
+    <link rel="icon" type="image/webp" href="OptiDomainfavicon-32x32.webp">
+
+    <!-- Open Graph: rich preview in social apps (Telegram, Discord, WeChat) -->
+    <meta property="og:type"        content="website">
+    <meta property="og:title"       content="OptiDomain · CloudFlare Edge Routing Dashboard">
+    <meta property="og:description" content="CloudFlare IP 智能优选工具 · CM/CT/CU 三网路由自动调度 · 实时延迟监控">
+    <meta property="og:image"       content="ITDOGTcping.webp">
+    <meta property="og:locale"      content="zh_CN">
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="OptiDomain · CloudFlare Edge Routing">
+    <meta name="twitter:description" content="CloudFlare IP 智能优选，三网路由自动调度">
+    <meta name="twitter:image"       content="ITDOGTcping.webp">
+
+    <!--
+        Content-Security-Policy:
+        - connect-src limited to self + data source only (principle of least privilege)
+        - frame-src limited to known embed origins
+    -->
+    <meta http-equiv="Content-Security-Policy"
+        content="
+            default-src 'self';
+            script-src  'self';
+            style-src   'self' https://fonts.googleapis.com;
+            font-src    'self' https://fonts.gstatic.com;
+            img-src     'self' data:;
+            frame-src   https://vps789.com;
+            connect-src 'self';
+        ">
+
+    <!-- DNS preconnect for render-critical font origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- DNS prefetch for jump targets (user-initiated, so non-critical) -->
+    <link rel="dns-prefetch" href="https://www.itdog.cn">
+    <link rel="dns-prefetch" href="https://vps789.com">
+
+    <!-- Fonts: display=swap prevents FOIT -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap"
+          rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0"
+          rel="stylesheet">
+
+    <!-- Web App Manifest (PWA installable) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FBF8F3">
+
+    <!-- Critical resource preload: tell browser these are render-blocking -->
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- SW Version Check -->
+    <div class="u-hidden" id="v-check">v31-FRIENDLY-UI</div>
+    <!-- Toast: aria-live so screen readers announce copy confirmations -->
+    <div id="toast" class="md-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <main class="md-container">
+
+        <!-- Page header -->
+        <header class="md-header">
+            <h1 class="site-headline">
+                <span class="material-symbols-outlined site-headline__icon" aria-hidden="true">cloud</span>OptiDomain
+            </h1>
+            <p class="md-subtitle">CloudFlare Smart Routing</p>
+            <p class="md-body-text" style="margin-top:-8px;">为您智能挑选极速 IP，让网络体验如丝般顺滑 ✨</p>
+        </header>
+
+        <!-- Section 1: Real-time monitoring -->
+        <section class="md-card" aria-labelledby="monitor-title">
+            <h2 class="md-title" id="monitor-title">Live Network Radar</h2>
+            <p class="md-body-text">Real-time Edge Node Latency &middot; 24h Full-chain Routing Trace<br>
+            <span style="font-size: 0.9em; opacity: 0.85;">全天候扫描边缘节点，网络波动一目了然 📡</span></p>
+
+            <div class="monitor-iframe-wrap" id="monitorIframeWrap">
+                <iframe
+                    id="monitorIframe"
+                    src="https://vps789.com/public/view/41818"
+                    title="24h Ping 延迟监控图表"
+                    frameborder="0"
+                    scrolling="no"
+                    loading="lazy"
+                    sandbox="allow-scripts allow-popups"
+                    class="monitor-iframe">
+                </iframe>
+            </div>
+
+            <div class="tcping-wrap">
+                <h3 class="md-body-text tcping-label">TCPing Connectivity Snapshot<br>
+                <span style="font-size: 0.85em; font-weight: 400; opacity: 0.8;">新鲜出炉的全国连通性快照 📸</span></h3>
+                <!-- Explicit dimensions prevent CLS layout shift -->
+                <img
+                    id="tcpingImg"
+                    src="ITDOGTcping.webp"
+                    alt="ITDog TCPing nationwide connectivity test snapshot"
+                    fetchpriority="high"
+                    width="900"
+                    height="500"
+                    class="tcping-img">
+                <!-- Error fallback injected by script.js if image fails to load -->
+                <div id="tcpingErrorPlaceholder" class="tcping-error-placeholder" hidden></div>
+            </div>
+        </section>
+
+        <!-- Section 2: ISP route dispatch -->
+        <section class="md-card" id="dispatchPanel" aria-labelledby="dispatch-title">
+            <h2 class="md-title" id="dispatch-title">ISP Route Dispatch</h2>
+            <p class="md-body-text">轻轻一点即可复制各运营商的专属优选 IP，快去 CloudFlare 填入享受提速吧 🚀</p>
+
+            <div class="domain-list" role="list">
+
+                <div class="domain-item" role="listitem">
+                    <div class="domain-info">
+                        <h3 class="code-font txt-base">cm.cdn</h3>
+                        <span class="badge cm-badge">移动 (CM) &middot; 低延迟专线，告别卡顿</span>
+                    </div>
+                    <div class="domain-actions">
+                        <button class="md-btn btn-tonal" data-action="copy" data-target="cm.cdn"
+                                aria-label="复制移动优化域名 cm.cdn 到剪贴板">
+                            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>复制
+                        </button>
+                        <button class="md-btn btn-filled" data-action="test" data-target="cm.cdn"
+                                aria-label="ITDog Tcping 测试 cm.cdn">
+                            <span class="material-symbols-outlined" aria-hidden="true">speed</span>ITDog Tcping
+                        </button>
+                    </div>
+                </div>
+
+                <div class="domain-item" role="listitem">
+                    <div class="domain-info">
+                        <h3 class="code-font txt-base">ct.cdn</h3>
+                        <span class="badge ct-badge">电信 (CT) &middot; CN2 GIA 高端直连</span>
+                    </div>
+                    <div class="domain-actions">
+                        <button class="md-btn btn-tonal" data-action="copy" data-target="ct.cdn"
+                                aria-label="复制电信优化域名 ct.cdn 到剪贴板">
+                            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>复制
+                        </button>
+                        <button class="md-btn btn-filled" data-action="test" data-target="ct.cdn"
+                                aria-label="ITDog Tcping 测试 ct.cdn">
+                            <span class="material-symbols-outlined" aria-hidden="true">speed</span>ITDog Tcping
+                        </button>
+                    </div>
+                </div>
+
+                <div class="domain-item" role="listitem">
+                    <div class="domain-info">
+                        <h3 class="code-font txt-base">cu.cdn</h3>
+                        <span class="badge cu-badge">联通 (CU) &middot; 双线护航，全速满跑</span>
+                    </div>
+                    <div class="domain-actions">
+                        <button class="md-btn btn-tonal" data-action="copy" data-target="cu.cdn"
+                                aria-label="复制联通优化域名 cu.cdn 到剪贴板">
+                            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>复制
+                        </button>
+                        <button class="md-btn btn-filled" data-action="test" data-target="cu.cdn"
+                                aria-label="ITDog Tcping 测试 cu.cdn">
+                            <span class="material-symbols-outlined" aria-hidden="true">speed</span>ITDog Tcping
+                        </button>
+                    </div>
+                </div>
+
+                <div class="domain-item" role="listitem">
+                    <div class="domain-info">
+                        <h3 class="code-font txt-base">avg.cdn</h3>
+                        <span class="badge avg-badge">三网 BGP &middot; 智能均衡，永远在线</span>
+                    </div>
+                    <div class="domain-actions">
+                        <button class="md-btn btn-tonal" data-action="copy" data-target="avg.cdn"
+                                aria-label="复制三网均衡域名 avg.cdn 到剪贴板">
+                            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>复制
+                        </button>
+                        <button class="md-btn btn-filled" data-action="test" data-target="avg.cdn"
+                                aria-label="ITDog Tcping 测试 avg.cdn">
+                            <span class="material-symbols-outlined" aria-hidden="true">speed</span>ITDog Tcping
+                        </button>
+                    </div>
+                </div>
+
+                <div class="domain-item" role="listitem">
+                    <div class="domain-info">
+                        <h3 class="code-font txt-base">cdn.default</h3>
+                        <span class="badge default-badge">GeoIP 默认路由 &middot; 贴心的兜底保护</span>
+                    </div>
+                    <div class="domain-actions">
+                        <button class="md-btn btn-tonal" data-action="copy" data-target="cdn"
+                                aria-label="复制默认域名 cdn.default 到剪贴板">
+                            <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>复制
+                        </button>
+                        <button class="md-btn btn-filled" data-action="test" data-target="cdn"
+                                aria-label="ITDog Tcping 测试默认域名">
+                            <span class="material-symbols-outlined" aria-hidden="true">speed</span>ITDog Tcping
+                        </button>
+                    </div>
+                </div>
+
+                <div class="domain-item wildcard-item" role="listitem">
+                    <div class="domain-info">
+                        <h3 class="code-font txt-base">*.cdn</h3>
+                        <span class="badge wildcard-badge">Wildcard &middot; 泛解析无惧网络污染</span>
+                    </div>
+                    <div class="domain-actions">
+                        <button class="md-btn btn-tonal wildcard-btn" data-action="copy" data-target="wildcard"
+                                aria-label="生成随机泛域名并复制到剪贴板">
+                            <span class="material-symbols-outlined" aria-hidden="true">pattern</span>泛域名复制
+                        </button>
+                        <button class="md-btn btn-filled wildcard-btn" data-action="test" data-target="wildcard"
+                                aria-label="使用随机泛域名进行 ITDog Tcping">
+                            <span class="material-symbols-outlined" aria-hidden="true">speed</span>泛域名 ITDog Tcping
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 3: Real-time node cluster table -->
+        <section class="md-card table-section" aria-labelledby="cluster-title">
+            <h2 class="md-title" id="cluster-title">Real-time Cluster</h2>
+            <p id="lastSyncTxt" class="md-body-text sync-label">正在努力为您拉取新鲜的节点数据中… ⏳</p>
+
+            <div class="md-table-wrapper" role="region" aria-label="IP 节点数据表" tabindex="0">
+                <table id="ipsTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Line Channel</th>
+                            <th scope="col">IP</th>
+                            <th scope="col">Avg Latency</th>
+                            <th scope="col">Loss Rate</th>
+                            <th scope="col">Colo Edge</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Skeleton rows injected by script.js on DOMContentLoaded -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="retryBlock" class="retry-block" hidden>
+                <button class="md-btn btn-tonal" data-action="retryFetch"
+                        aria-label="重新获取节点数据">
+                    <span class="material-symbols-outlined" aria-hidden="true">refresh</span>Retry Fetch
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- type="module": auto-defer + strict mode + isolated scope (no global pollution) -->
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
