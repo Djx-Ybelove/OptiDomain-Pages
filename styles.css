@@ -118,21 +118,30 @@ body {
 }
 
 .monitor-iframe-wrap {
-    width: 632px;
-    max-width: 100%;
+    width: 100%;
+    max-width: 640px;
     margin: 0 auto;
     background: #FFFFFF;
     box-shadow: var(--md-elevation-1);
     border-radius: 16px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     transform: translateZ(0);
-    aspect-ratio: 632 / 304;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(28,21,16,0.15) transparent;
 }
+
+.monitor-iframe-wrap::-webkit-scrollbar { height: 6px; }
+.monitor-iframe-wrap::-webkit-scrollbar-thumb { background-color: rgba(28,21,16,0.15); border-radius: 10px; }
+
 .monitor-iframe {
-    width: 100%;
-    height: 100%;
+    width: 632px;
+    height: 304px;
+    min-width: 632px;
     display: block;
     border: none;
+    transform: translateZ(0);
 }
 
 .tcping-wrap  { margin-top: 36px; }
@@ -170,11 +179,20 @@ body {
     background: #FFFDF9;
     border: 1px solid #F5EFE6;
     border-radius: 20px;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+    /* Mobile fluid touch optimization */
+    -webkit-tap-highlight-color: transparent;
 }
 .domain-item:hover {
     border-color: rgba(28,21,16,0.12);
     background: #FFFBF5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(28,21,16,0.03);
+}
+.domain-item:active {
+    transform: scale(0.985);
+    background: #F5EFE6;
+    transition: transform 0.1s ease-out, background 0.1s ease-out;
 }
 
 .domain-info {
